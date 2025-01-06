@@ -1,25 +1,142 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <string>
 #include <sstream>
 
 using namespace std;
 
-class Stolik {
+template <typename T>
+class Container {
 public:
-    string toString() const {
-        return to_string(numer_) + " " + (zajety_ ? "1" : "0") + " " + to_string(liczba_miejsc_) + " " + nazwisko_;
+    Container(T data, Container *next = nullptr, Container *prev = nullptr){
+        prev_element_ = prev;
+        Container_element_ = data;
+        next_element_ = next;
+    }
+    T getContainerElement() const { 
+        return Container_element_; 
+    }
+    Container* getNextElement() const {
+        return next_element_;
+    }
+    Container* getPrevElement() const {
+        return prev_element_;
+    }
+    void setContainerElement(T data) {
+        Container_element_ = data;
+    }
+    void setNextElement(Container *next) {
+        next_element_ = next;
+    }
+    void setPrevElement(Container *prev) {
+        prev_element_ = prev;
     }
 
 private:
-    int numer_;
-    bool zajety_;
-    int liczba_miejsc_;
-    string nazwisko_;
+    T Container_element_;
+    Container* next_element_;
+    Container* prev_element_;
 };
 
+template <typename T>
+class DoubleLinkedList {
+public:
 
+     DoubleLinkedList(){
+        linked_list_head_ = nullptr;
+        linked_list_tail_ = nullptr;
+    }
+
+    ~DoubleLinkedList() {
+        while (linked_list_head_ != nullptr) {
+            Container<T> *temp = linked_list_head_;
+            linked_list_head_ = linked_list_head_->getNextElement();
+            delete temp;
+        }
+    }
+
+    void addElementToList(const T& data) {
+        Container<T>* newContainer = new Container<T>(data);
+
+        if (!linked_list_head_) { 
+            linked_list_head_ = linked_list_tail_ = newContainer;
+            return;
+        }
+
+        Container<T>* current = linked_list_tail_;
+
+        if (!current) { 
+            linked_list_tail_->setNextElement(newContainer);
+            newContainer->setPrevElement(linked_list_tail_);
+            linked_list_tail_ = newContainer;
+        } else if (current == linked_list_head_) { 
+            newContainer->setNextElement(linked_list_head_);
+            linked_list_head_->setPrevElement(newContainer);
+            linked_list_head_ = newContainer;
+        } else { 
+            Container<T>* prev = current->getPrevElement();
+            prev->setNextElement(newContainer);
+            newContainer->setPrevElement(prev);
+            newContainer->setNextElement(current);
+            current->setPrevElement(newContainer);
+        }
+    }
+
+    void deleteElementFromList(const T& data) {
+        if (!linked_list_head_) return;
+
+        Container<T>* current = linked_list_head_;
+        while (current && !(current->getContainerElement() == data)) {
+            current = current->getNextElement();
+        }
+
+        if (!current) return;
+
+        if (current == linked_list_head_) { 
+            linked_list_head_ = linked_list_head_->getNextElement();
+            if (linked_list_head_)
+                linked_list_head_->setPrevElement(nullptr);
+            else
+                linked_list_tail_ = nullptr;
+        } else if (current == linked_list_tail_) { 
+            linked_list_tail_ = linked_list_tail_->getPrevElement();
+            if (linked_list_tail_)
+                linked_list_tail_->setNextElement(nullptr);
+            else
+                linked_list_head_ = nullptr;
+        } else { 
+            Container<T>* prev = current->getPrevElement();
+            Container<T>* next = current->getNextElement();
+            prev->setNextElement(next);
+            next->setPrevElement(prev);
+        }
+
+        delete current;
+    }
+
+    void printFromTheEndList() const {
+        Container<T>* temp = linked_list_tail_;
+        while (temp) {
+            cout << temp->getContainerElement() << " ";
+            temp = temp->getPrevElement();
+        }
+        cout << endl;
+    }
+
+private:
+    Container<T> *linked_list_head_;
+    Container<T> *linked_list_tail_;
+};
+
+struct Stolik {
+    int numer;
+    bool zajety;
+    int liczba_miejsc;
+    string nazwisko;
+
+    string toString() const {
+        return to_string(numer) + " " + (zajety ? "1" : "0") + " " + to_string(liczba_miejsc) + " " + (zajety ? nazwisko : "");
+    }
 };
 
 struct Rezerwacja {
@@ -33,8 +150,8 @@ struct Rezerwacja {
     }
 };
 
-vector<Stolik> wczytajStoliki(const string& plik) {
-    vector<Stolik> stoliki;
+DoubleLinkedList<Stolik> wczytajStoliki(const string& plik) {
+    DoubleLinkedList<Stolik> stoliki;
     ifstream in(plik);
 
     if (!in.is_open()) {
@@ -50,15 +167,15 @@ vector<Stolik> wczytajStoliki(const string& plik) {
         ss >> stolik.numer >> zajety_int >> stolik.liczba_miejsc;
         getline(ss, stolik.nazwisko);
         stolik.zajety = (zajety_int == 1);
-        stoliki.push_back(stolik);
+        stoliki.addElementToList(stolik);
     }
 
     in.close();
     return stoliki;
 }
 
-vector<Rezerwacja> wczytajRezerwacje(const string& plik) {
-    vector<Rezerwacja> rezerwacje;
+DoubleLinkedList<Rezerwacja> wczytajRezerwacje(const string& plik) {
+    DoubleLinkedList<Rezerwacja> rezerwacje;
     ifstream in(plik);
 
     if (!in.is_open()) {
@@ -71,7 +188,7 @@ vector<Rezerwacja> wczytajRezerwacje(const string& plik) {
         stringstream ss(linia);
         Rezerwacja rezerwacja;
         ss >> rezerwacja.nazwisko >> rezerwacja.numer_stolika >> rezerwacja.data >> rezerwacja.liczba_osob;
-        rezerwacje.push_back(rezerwacja);
+        rezerwacje.addElementToList(rezerwacja);
     }
 
     in.close();
@@ -108,19 +225,19 @@ void zapiszRezerwacje(const string& plik, const vector<Rezerwacja>& rezerwacje) 
 }
 
 void addReservation(std::vector<Stolik>& tables, std::vector<Rezerwacja>& reservations) {
-    std::string name;
+    string name;
     int tableNumber;
-    std::string date;
+    string date;
     int numberOfPeople;
 
-    std::cout << "Enter name: ";
-    std::cin >> name;
-    std::cout << "Enter table number: ";
-    std::cin >> tableNumber;
-    std::cout << "Enter date (yyyy-mm-dd): ";
-    std::cin >> date;
-    std::cout << "Enter number of people: ";
-    std::cin >> numberOfPeople;
+    cout << "Enter name: ";
+    cin >> name;
+    cout << "Enter table number: ";
+    cin >> tableNumber;
+    cout << "Enter date (yyyy-mm-dd): ";
+    cin >> date;
+    cout << "Enter number of people: ";
+    cin >> numberOfPeople;
 
     auto foundTable = std::find_if(tables.begin(), tables.end(),
         [tableNumber](const Stolik& table) { return table.numer == tableNumber; });
@@ -136,7 +253,7 @@ void addReservation(std::vector<Stolik>& tables, std::vector<Rezerwacja>& reserv
     std::cout << "Reservation added." << std::endl;
 }
 
-void usunRezerwacje(vector<Stolik>& stoliki, vector<Rezerwacja>& rezerwacje) {
+void usunRezerwacje(DoubleLinkedList<Stolik>& stoliki, DoubleLinkedList<Rezerwacja>& rezerwacje) {
     string nazwisko;
     cout << "Podaj nazwisko do usunięcia rezerwacji: ";
     cin >> nazwisko;
@@ -174,8 +291,8 @@ int main() {
     const string plik_stoliki = "lista-stolkiow.txt";
     const string plik_rezerwacje = "rezerwacje.txt";
 
-    vector<Stolik> stoliki = wczytajStoliki(plik_stoliki);
-    vector<Rezerwacja> rezerwacje = wczytajRezerwacje(plik_rezerwacje);
+    DoubleLinkedList<Stolik> stoliki = wczytajStoliki(plik_stoliki);
+    DoubleLinkedList<Rezerwacja> rezerwacje = wczytajRezerwacje(plik_rezerwacje);
 
     int wybor;
     do {
@@ -189,7 +306,7 @@ int main() {
 
         switch (wybor) {
         case 1:
-            wyswietlStoliki(stoliki);
+            stoliki.printFromTheEndList();
             break;
         case 2:
             rezerwacje.push_back(dodajRezerwacje(stoliki, rezerwacje));
