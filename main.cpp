@@ -1,9 +1,86 @@
 #include <iostream>
 #include <fstream>
-#include <vector>
 #include <sstream>
 
 using namespace std;
+
+class Stolik {
+public:
+
+    string toString() const {
+        return to_string(numer_) + " " + (zajety_ ? "1" : "0") + " " + to_string(liczba_miejsc_) + " " + (zajety_ ? nazwisko_ : "");
+    }
+
+    friend ostream& operator<<(ostream& os, const Stolik& stolik) {
+        os << stolik.toString();
+        return os;
+    }
+
+    int getNumer() const{
+        return numer_;
+    }
+
+    bool getZajety() const{
+        return zajety_;
+    }
+
+    int getLiczbaMiejsc() const{
+        return liczba_miejsc_;
+    }
+
+    string getNazwisko() const{
+        return nazwisko_;
+    }
+
+    void setNumer(int numer) {
+        numer_ = numer;
+    }
+
+    void setZajety(bool zajety) {
+        zajety_ = zajety;
+    }
+
+    void setLiczbaMiejsc(int liczba_miejsc) {
+        liczba_miejsc_ = liczba_miejsc;
+    }
+
+    void setNazwisko(string nazwisko) {
+        nazwisko_ = nazwisko;
+    } 
+private:
+    int numer_;
+    bool zajety_;
+    int liczba_miejsc_;
+    string nazwisko_;
+};
+
+class Rezerwacja {
+public:
+    string toString() const {
+        return nazwisko + " " + to_string(numer_stolika) + " " + data + " " + to_string(liczba_osob);
+    }
+
+    string getNazwisko() const {
+        return nazwisko;
+    }
+
+    int getNumerStolika() const {
+        return numer_stolika;
+    }
+
+    string getData() const {
+        return data;
+    }
+
+    int getLiczbaOsob() const {
+        return liczba_osob;
+    }
+private:
+    string nazwisko;
+    int numer_stolika;
+    string data;
+    int liczba_osob;
+};
 
 template <typename T>
 class Container {
@@ -82,7 +159,7 @@ public:
         }
     }
 
-    void deleteElementFromList(const T& data) {
+    void usunElementZListy(const T& data) {
         if (!linked_list_head_) return;
 
         Container<T>* current = linked_list_head_;
@@ -101,7 +178,7 @@ public:
         } else if (current == linked_list_tail_) { 
             linked_list_tail_ = linked_list_tail_->getPrevElement();
             if (linked_list_tail_)
-                linked_list_tail_->setNextElement(nullptr);
+                linked_list_tail_ = linked_list_tail_->setNextElement(nullptr);
             else
                 linked_list_head_ = nullptr;
         } else { 
@@ -115,10 +192,10 @@ public:
     }
 
     void printFromTheEndList() const {
-        Container<T>* temp = linked_list_tail_;
-        while (temp) {
-            cout << temp->getContainerElement() << " ";
-            temp = temp->getPrevElement();
+        Container<T>* temp = linked_list_head_;
+        while (temp != nullptr) {
+            cout << temp->getContainerElement();
+            temp = temp->getNextElement();
         }
         cout << endl;
     }
@@ -128,27 +205,7 @@ private:
     Container<T> *linked_list_tail_;
 };
 
-struct Stolik {
-    int numer;
-    bool zajety;
-    int liczba_miejsc;
-    string nazwisko;
 
-    string toString() const {
-        return to_string(numer) + " " + (zajety ? "1" : "0") + " " + to_string(liczba_miejsc) + " " + (zajety ? nazwisko : "");
-    }
-};
-
-struct Rezerwacja {
-    string nazwisko;
-    int numer_stolika;
-    string data;
-    int liczba_osob;
-
-    string toString() const {
-        return nazwisko + " " + to_string(numer_stolika) + " " + data + " " + to_string(liczba_osob);
-    }
-};
 
 DoubleLinkedList<Stolik> wczytajStoliki(const string& plik) {
     DoubleLinkedList<Stolik> stoliki;
@@ -195,11 +252,11 @@ DoubleLinkedList<Rezerwacja> wczytajRezerwacje(const string& plik) {
     return rezerwacje;
 }
 
-void saveTablesToFile(const std::string& filename, const std::vector<Stolik>& tables) {
-    std::ofstream file{filename};
+void saveTablesToFile(const string& filename, const ::vector<Stolik>& tables) {
+    ofstream file{filename};
 
     if (!file.is_open()) {
-        return;
+        cout << "Niepoprawnie otworzenie pliku do zapisu: " << filename << endl;
     }
 
     for (const auto& table : tables) {
@@ -224,66 +281,14 @@ void zapiszRezerwacje(const string& plik, const vector<Rezerwacja>& rezerwacje) 
     out.close();
 }
 
-void addReservation(std::vector<Stolik>& tables, std::vector<Rezerwacja>& reservations) {
-    string name;
-    int tableNumber;
-    string date;
-    int numberOfPeople;
-
-    cout << "Enter name: ";
-    cin >> name;
-    cout << "Enter table number: ";
-    cin >> tableNumber;
-    cout << "Enter date (yyyy-mm-dd): ";
-    cin >> date;
-    cout << "Enter number of people: ";
-    cin >> numberOfPeople;
-
-    auto foundTable = std::find_if(tables.begin(), tables.end(),
-        [tableNumber](const Stolik& table) { return table.numer == tableNumber; });
-
-    if (foundTable == tables.end() || foundTable->reserved || numberOfPeople > foundTable->numberOfSeats) {
-        std::cout << "Table is already reserved or not enough seats!" << std::endl;
-        return;
-    }
-
-    foundTable->reserved = true;
-    foundTable->name = name;
-    reservations.push_back({name, tableNumber, date, numberOfPeople});
-    std::cout << "Reservation added." << std::endl;
-}
-
-void usunRezerwacje(DoubleLinkedList<Stolik>& stoliki, DoubleLinkedList<Rezerwacja>& rezerwacje) {
-    string nazwisko;
-    cout << "Podaj nazwisko do usunięcia rezerwacji: ";
-    cin >> nazwisko;
-
-    for (size_t i = 0; i < rezerwacje.size(); ++i) {
-        if (rezerwacje[i].nazwisko == nazwisko) {
-            int numer_stolika = rezerwacje[i].numer_stolika;
-
-            for (auto& stolik : stoliki) {
-                if (stolik.numer == numer_stolika) {
-                    stolik.zajety = false;
-                    stolik.nazwisko = "";
-                    break;
-                }
-            }
-
-            rezerwacje.erase(rezerwacje.begin() + i);
-            cout << "Rezerwacja została usunięta." << endl;
-            return;
-        }
-    }
-
-    cout << "Nie znaleziono rezerwacji dla podanego nazwiska!" << endl;
-}
-
-void wyswietlStoliki(const vector<Stolik>& stoliki) {
-    for (const auto& stolik : stoliki) {
+void wyswietlStoliki(const DoubleLinkedList<Stolik>& stoliki) {
+    Container<Stolik>* temp = stoliki.linked_list_head_;
+    while(temp != nullptr) {
+        Stolik stolik = temp->getContainerElement();
         cout << "Stolik nr " << stolik.numer << " | Miejsca: " << stolik.liczba_miejsc 
              << " | Zajęty: " << (stolik.zajety ? "Tak" : "Nie")
              << " | Nazwisko: " << (stolik.zajety ? stolik.nazwisko : "Brak") << endl;
+        temp = temp->getNextElement();
     }
 }
 
@@ -305,20 +310,41 @@ int main() {
         cin >> wybor;
 
         switch (wybor) {
-        case 1:
+        case 1:{
             stoliki.printFromTheEndList();
             break;
-        case 2:
-            rezerwacje.push_back(dodajRezerwacje(stoliki, rezerwacje));
+        }
+        case 2:{
+            string nazwisko_osoby_rezerwujacej;
+            int numer_stolkia;
+            string data_rezerwacji;
+            int maksymalna_liczba_osob;
+
+            cout << "Podaj nazwisko: ";
+            cin >> nazwisko_osoby_rezerwujacej;
+            cout << "Podaj numer stolika: ";
+            cin >> numer_stolkia;
+            cout << "Enter date (yyyy-mm-dd): ";
+            cin >> data_rezerwacji;
+            cout << "Enter number of people: ";
+            cin >> maksymalna_liczba_osob;
+
+   
+            rezerwacje.addElementToList(Rezerwacja{nazwisko_osoby_rezerwujacej, numer_stolkia, data_rezerwacji, maksymalna_liczba_osob});
             break;
-        case 3:
-            usunRezerwacje(stoliki, rezerwacje);
+        }
+        case 3:{
+            int numer_stolika;
+            cout << "Podaj numer stolika by usunąć rezerwacje: ";
+            cin >> numer_stolika;
+
+            rezerwacje.usunElementZListy(numer_stolika);
             break;
-        case 4:
-            zapiszStoliki(plik_stoliki, stoliki);
-            zapiszRezerwacje(plik_rezerwacje, rezerwacje);
+        }
+        case 4:{   
             cout << "Zapisano dane. Do widzenia!" << endl;
             break;
+        }
         default:
             cout << "Nieprawidłowy wybór!" << endl;
         }
