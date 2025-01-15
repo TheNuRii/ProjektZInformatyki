@@ -3,17 +3,20 @@
 
 #include <string>
 #include <vector>
+#include "double-linked-list.h"
+
+using namespace std;
 
 class MenuJedzenie {
 private:
-    std::string fileName;          
-    std::vector<std::string> dishes; 
+    string fileName;          
+    DoubleLinkedList<string> dishes; 
 
 public:
-    MenuJedzenie(const std::string& file); 
+    MenuJedzenie(const string& file); 
     void loadMenu();                        
     void displayMenu() const;               
-    std::string getDish(int index) const;   
+    string getDish(int index) const;   
 };
 
 #endif 
