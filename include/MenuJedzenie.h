@@ -2,7 +2,6 @@
 #define MENU_JEDZENIE_H
 
 #include <string>
-#include <vector>
 #include "double-linked-list.h"
 
 using namespace std;

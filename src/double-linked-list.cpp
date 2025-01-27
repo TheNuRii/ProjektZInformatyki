@@ -2,7 +2,7 @@
 
 using namespace std;
 
-// All Node class implementations
+// Implementacja klasy Node
 template <typename T>
 Node<T>::Node(T data, Node<T>* next, Node<T>* prev){
     data_ = data;
@@ -34,7 +34,7 @@ void Node<T>::setNextElement(Node<T>* new_next){next_element_ = new_next;}
 template <typename T>
 void Node<T>::setPrevElement(Node<T>* new_prev){prev_element_ = new_prev;}
 
-// All DoubleLinkedList class implementations
+// Implementacja klasy DoubleLinkedList
 
 template <typename T>
 DoubleLinkedList<T>::DoubleLinkedList(){

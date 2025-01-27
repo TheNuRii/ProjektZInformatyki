@@ -32,6 +32,38 @@ bool adminLogin() {
     }
 }
 
+void displayOrder() {
+    
+}
+
+void editOrderStatus() {
+    
+}
+
+void checkOrderStatus() {
+
+}
+
+void displayReservations() {
+
+}
+
+void editReservations() {
+    
+}
+
+void deleteReservations() {
+    
+}
+
+void browseMenu() {
+    
+}
+
+void reserveTable() {
+    
+}
+
 void client_Menu() {
     int choice;
     do {
